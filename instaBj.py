@@ -1,41 +1,37 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import os
 from time import sleep
 from datetime import datetime
 import random
 import requests
-import InstaInfoFile as iif
 
-driver = webdriver.Firefox(executable_path="C:/Programming/Drivers/geckodriver.exe")
+# Initialize webdriver for Chrome using ChromeDriverManager
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
+# Initialize global variables
 PLAYERS = []
-
 CARDS = [2, 3, 4, 5, 6, 7, 8, 9, 11, 10, 10, 10, 2, 3, 4, 5, 6, 7, 8, 9, 11, 10, 10, 10, 2, 3, 4, 5, 6, 7, 8, 9, 11, 10, 10, 10, 2, 3, 4, 5, 6, 7, 8, 9, 11, 10, 10, 10]
-
 DEALER = 0
-
 TURN = 0
-
 STATUS = True
 
-
+# Function to send a message in the Instagram chat
 def sendMsg(msg):
-    driver.find_elements_by_tag_name("textarea")[0].send_keys(msg, Keys.ENTER)
+    driver.find_elements(By.TAG_NAME, "textarea")[0].send_keys("!! "+ msg, Keys.ENTER)
 
+# Function to get the most recent command in the Instagram chat
 def getMsg():
-    #print(driver.find_elements_by_class_name('KV-D4'))
-    #for i in driver.find_elements_by_class_name('KV-D4').reverse():
-        #if i.tag_name == "div":
-            #return i.text
-    #print(driver.find_elements_by_class_name('KV-D4')[-1].find_element_by_xpath('../../../../../../../../..').find_elements_by_tag_name('a')[0].get_attribute('href').split('/')[3])
-    return driver.find_elements_by_class_name('KV-D4')[-1] 
+    return driver.find_elements(By.XPATH, "//*[starts-with(text(), '!')]")[-1] 
 
+# Function to get the command from the most recent message in the Instagram chat
 def getCmd():
 
     txto = getMsg()
     txt = txto.text + ' '
-    #who = txto.find_element_by_xpath('../../../../../../../../..').find_elements_by_tag_name('a')[0].get_attribute('href').split('/')[3]
     if(txt[0] == "!"):
         cmd = {"command": txt.split(' ')[0], "params": txt.split(' ')[1].replace('*', ' '), "true": True}
         return cmd
@@ -83,6 +79,7 @@ def start():
     for i in PLAYERS:
         i["pcards"] = []
 
+    # Deal each player 2 cards
     for _ in range(2):
         for i in PLAYERS:
             card = getCard()
@@ -214,19 +211,15 @@ def rrplay():
 
 
 if __name__ == "__main__":
-
     driver.get('https://instagram.com')
-    driver.implicitly_wait(1300)
-    driver.find_elements_by_tag_name('input')[0].send_keys('ilhan_muftic')
-    driver.find_elements_by_tag_name('input')[1].send_keys(iif.password, Keys.ENTER)
-    input("Enter the chat you want the bot to be activated in and press enter!")
-    sendMsg("hej hani baniz")
+    input("Log into your instagram account, enter the chat you want the bot to be activated in and press enter!")
+    sendMsg("hello")
 
     while True:
-        sleep(0.5)
+        sleep(1)
         try:
             cmd = getCmd()
-            if(cmd["true"]):
+            if(cmd["true"] and cmd["command"]!="!!"):
                 if(cmd["command"]=="!addp"):
                     addPlayer(cmd["params"])
                 elif(cmd["command"]=="!hit"):
@@ -249,7 +242,7 @@ if __name__ == "__main__":
                 elif (cmd["command"] == "!players"):
                     msg = ""
                     for i in PLAYERS:
-                        msg += i["name"] + " - " + str(i["wins"]) + "\t\t\t"
+                        msg += i["name"] + " - " + str(i["wins"]) + " "
 
                     sendMsg(msg)
                 elif cmd["command"] == "!help":
@@ -263,14 +256,14 @@ if __name__ == "__main__":
                                      Komande: !addp <ime> dodaje igraca, !start pocinje igru, !reset brise sve igrace i resetuje igru, a za igru komande !hit i !stand\
                                      !russian ruski rulet, bot ispisuje ispale na kraju ostaje samo jedan pobjednik\
                                      !flip glava-pismo, !players ispisuje sve igrace i njihove pobjede, !rename <id>,<name> \
-                                     !remove <id> brise igraca, !spam <n>,<msg> bot spamuje poruku n puta (najvise 20)\
-                                     !jebiga, !ask <pitanje da/ne> daje odgovor da ili ne, !jeltibabopeder, !joke\
+                                     !remove <id> brise igraca \
+                                     !ask <pitanje da/ne> daje odgovor da ili ne,  !joke, !idegas gasi gasera\
                                      id se gleda po redu pocevsi od 0 (komanda !players)\
                                      u porukama razmak je zamijenjen sa *\
                                      Bot ignorise sve poruke koje ne pocinju sa '!'")
                 elif (cmd["command"] == "!shutdown"):
-                    sendMsg("baj hani baniz")
-                    exit(0)
+                    sendMsg("baj")
+                    break
                 elif (cmd["command"] == "!idegas"):
                     now = datetime.now()
 
@@ -291,12 +284,8 @@ if __name__ == "__main__":
                     else:
                         for _ in range(0, int(cmd["params"].split(',')[0])):
                             sendMsg(cmd["params"].split(',')[1])
-                elif cmd["command"] == "!jebiga":
-                    sendMsg("Kakva je godina dobro je")
                 elif cmd["command"] == "!ask":
                     sendMsg(random.choice(["Da", "Ne"]))
-                elif cmd["command"] == "!jeltibabopeder":
-                    sendMsg(random.choice(["ne. crkni", "jeste, cmok<3"]))
                 elif cmd["command"] == "!joke":
                     joke = requests.get('https://v2.jokeapi.dev/joke/Dark?format=txt')
                     sendMsg(joke.text)
@@ -304,4 +293,6 @@ if __name__ == "__main__":
         except:
             print("Error")
             raise
+            
+    driver.close()        
    
